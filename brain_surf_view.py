@@ -13,7 +13,7 @@ surface_dir = '/Users/au483096/data/surface'
 
 SURFACE_MNI = {'left': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_left_smooth.gii',
                'right': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_right_smooth.gii',
-               'both': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_right_smooth.gii'}
+               'both': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_both_smooth.gii'}
 
 N_VERTEX_MNI = {'left': 81349,
                 'right': 81233}
@@ -90,7 +90,7 @@ def main(args):
     # ===== If data is provided, this is loaded ===== 
     if args.surface is None:
         if args.data is None:
-            surface = get_surface(81349, 81233) # If no input args, show MNI surface
+            surface, _, _ = get_surface(81349) # If no input args, show MNI surface
             b_obj = BrainObj(surface['both'], translucent=False, hemisphere='both')
         else:
             try:
