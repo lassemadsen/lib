@@ -9,7 +9,10 @@ from visbrain.objects import BrainObj
 from visbrain.gui import Brain
 import sys
 
-surface_dir = '/Users/au483096/data/surface'
+from os.path import expanduser
+home = expanduser("~")
+
+surface_dir = f'{home}/data/surface'
 
 SURFACE_MNI = {'left': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_left_smooth.gii',
                'right': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_right_smooth.gii',
