@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+"""Convert fs surface to minc .obj surface
+"""
+
+import argparse
+import subprocess
+import tempfile
+
+def main(args):
+    fs_in = args.fs_in
+    obj_out = args.obj_out
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        run_shell(f'mris_convert --cras_add {fs_in} {tmp_dir}/fs.asc')
+        run_shell(f'mris_convert --cras_add -n {fs_in} {tmp_dir}/fs_normals.asc')
+
+        # Get vertices and faces
+        with open(f'{tmp_dir}/fs.asc', 'r') as fs:
+            data = fs.read().splitlines()
+
+            nV = data[1].split(' ')[0]
+            nF = data[1].split(' ')[1]
+
+            vertex = data[2:int(nV)+2]
+            faces = data[int(nV)+2:]
+        
+        # Get normals (-n flags produces normals instead of vertices)
+        with open(f'{tmp_dir}/fs_normals.asc', 'r') as fs:
+            data = fs.read().splitlines()
+
+            nV = data[1].split(' ')[0]
+            normals = data[2:int(nV)+2]
+        
+    faces_concat = []
+    for f in faces:
+        faces_concat.extend(f.split(' ')[0:3])
+    
+    indices = list(map(str, list(range(3,int(nF)*3+1,3))))
+
+    # Write to file
+    with open(obj_out, 'w') as obj:
+        obj.write(f'P 0.3 0.3 0.4 10 1 {nV}\n')
+        for v in vertex:
+            obj.write(f'{" ".join(v.split("  ")[0:3])}\n')
+        
+        obj.write(f'\n')
+        for n in normals:
+            obj.write(f'{" ".join(n.split("  ")[0:3])}\n')
+
+        obj.write(f'\n{nF}\n')
+        obj.write(f'0 0.9 0.9 0.9 1\n\n')
+        obj.write(f'{" ".join(indices)} \n\n')
+        obj.write(f'{" ".join(faces_concat)} \n')
+
+
+def run_shell(str, no_output=False):
+    """Function to run shell/bash command in a safe manner
+    """
+    cmd_lst = str.split(' ')
+
+    if no_output:
+        subprocess.run(cmd_lst, check=True, text=True, stdout=subprocess.DEVNULL)
+    else:
+        subprocess.run(cmd_lst, check=True, text=True)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('fs_in')
+    parser.add_argument('obj_out')
+    args = parser.parse_args()
+    main(args)

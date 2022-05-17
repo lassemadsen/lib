@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+import argparse
+import subprocess
+import numpy as np
+import tempfile
+import sys
+import os
+
+def main(args):
+    """
+    Convert minc .obj file to another file type.
+    Can be any of the following:
+     - freesurfer binary file (.pial or .white)
+     - freesurfer asc file (.asc)
+     - gifti file (.gii)
+
+     TODO
+     Optimize method to write np array to file. This is pretty slow
+    """
+
+    in_obj = args.input_obj
+
+    if args.output[0] == '/': # If complete path
+        output = args.output
+    else: # If relative path. Avoid output being save to visbrain_data folder
+        output = f'{os.getcwd()}/{args.output}'
+
+    basename_in = in_obj.split('/')[-1]
+
+    with open(in_obj, 'r') as fs:
+        data = fs.read().splitlines()
+
+    nV = int(data[0].split(' ')[-1])
+    nF = int(data[nV*2+3])
+
+    vertex = data[1:nV+1]
+    faces = data[-1]
+
+    faces = np.array([int(f) for f in faces.split()])
+    faces = faces.reshape(int(len(faces)/3), 3)
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+
+        # Write to file
+        with open(f'{tmp_dir}/srf.asc', 'w') as obj:
+            obj.write(f'#!ascii version of {basename_in}\n')
+            obj.write(f'{nV} {nF}\n')
+
+            for v in vertex:
+                obj.write(f'{v} 0\n')
+
+            for f in faces:
+                obj.write(f'{str(f).replace("[","").replace("]","").lstrip()} 0\n')
+
+        if output.split('.')[-1] == 'asc':
+            run_shell(f'mv {tmp_dir}/srf.asc {output}')
+        elif output.split('.')[-1] == 'gii' or output.split('.')[-1] == 'pial' or output.split('.')[-1] == 'white':
+            run_shell(f'mris_convert {tmp_dir}/srf.asc {output}')
+        else:
+            sys.exit('Unknown output format')
+
+    print(f'{output} saved.')
+
+
+def run_shell(str, no_output=False):
+    """Function to run shell/bash command in a safe manner
+    """
+    cmd_lst = str.split(' ')
+
+    if no_output:
+        subprocess.run(cmd_lst, check=True, text=True, stdout=subprocess.DEVNULL)
+    else:
+        subprocess.run(cmd_lst, check=True, text=True)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_obj', help='Obj file')
+    parser.add_argument('output', help='Output location.')
+    args = parser.parse_args()
+    main(args)
