@@ -3,7 +3,7 @@ import argparse
 from surface_plot import plot_surface
 import numpy as np
 
-from surface_plot.config import N_VERTEX
+# from surface_plot.config import get_surface
 
 def main(args):
     # Load data
@@ -12,13 +12,13 @@ def main(args):
 
     data = {'left': data_left,
             'right': data_right}
-    check_data_header(data)
+    # check_data_header(data)w
 
     # Define mask
     if args.mask is not None:
         mask = {'left': args.mask[0],
                 'right': args.mask[1]}
-        check_data_header(mask)
+        # check_data_header(mask)
     else:
         if args.mask_value is not None:
             
@@ -29,12 +29,12 @@ def main(args):
 
     plot_surface.plot_surface(data, args.output, vlim=args.vlim, mask=mask, cbar_loc=args.cbar_loc, cbar_title=args.cbar_title, title=args.title, cmap=args.cmap, clobber=args.clobber)
 
-def check_data_header(data):
-    for hemisphere in ['left', 'right']:
-        if len(data[hemisphere]) == N_VERTEX[hemisphere]+1:
-            data[hemisphere] = data[hemisphere][1:] # Remove header line
-        elif len(data[hemisphere]) != N_VERTEX[hemisphere]:
-            raise ImportError(f'Data shape does not fit number of vertices. Should be left: {N_VERTEX["left"]}, right: {N_VERTEX["right"]}')
+# def check_data_header(data):
+#     for hemisphere in ['left', 'right']:
+#         if len(data[hemisphere]) == N_VERTEX[hemisphere]+1:
+#             data[hemisphere] = data[hemisphere][1:] # Remove header line
+#         elif len(data[hemisphere]) != N_VERTEX[hemisphere]:
+#             raise ImportError(f'Data shape does not fit number of vertices. Should be left: {N_VERTEX["left"]}, right: {N_VERTEX["right"]}')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='Plot data')
