@@ -169,34 +169,34 @@ def transparent_cmap(cmap_str):
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser(description='Script to plot QC of minc image and mask')
-    # parser.add_argument('img_file', help='Location of image file to show.')
-    # parser.add_argument('mask_file', help='Location of mask file to overlay on image.')
-    # parser.add_argument('outfile', help='Location of output. Should be .jpg or .png.')
-    # parser.add_argument('-img_cmap', default='gray', help='Matlplotlib cmap to plot image. Default is gray.')
-    # parser.add_argument('-mask_cmap', default='jet', help='Matlplotlib cmap to plot mask. Default is jet.')
-    # parser.add_argument('-img_range', nargs=2, default=None, help='Min Max range of image. Autoscale is none provided.', metavar=('min', 'max'))
-    # parser.add_argument('-mask_range', nargs=2, default=None, help='Min Max range of mask. Autoscale is none provided.', metavar=('min', 'max'))
-    # parser.add_argument('-file_id', default='', help='Add additional information about the image, e.g. sub_id, to be shown with the filename.')
-    # parser.add_argument('-mask_id', default='', help='Add additional information about the mask, e.g. sub_id, to be shown with the filename.')
-    # parser.add_argument('-clobber', action='store_true', help='If -clobber, existing file will be overwritten.')
+    parser = argparse.ArgumentParser(description='Script to plot QC of minc image and mask')
+    parser.add_argument('img_file', help='Location of image file to show.')
+    parser.add_argument('mask_file', help='Location of mask file to overlay on image.')
+    parser.add_argument('outfile', help='Location of output. Should be .jpg or .png.')
+    parser.add_argument('-img_cmap', default='gray', help='Matlplotlib cmap to plot image. Default is gray.')
+    parser.add_argument('-mask_cmap', default='jet', help='Matlplotlib cmap to plot mask. Default is jet.')
+    parser.add_argument('-img_range', nargs=2, default=None, help='Min Max range of image. Autoscale is none provided.', metavar=('min', 'max'))
+    parser.add_argument('-mask_range', nargs=2, default=None, help='Min Max range of mask. Autoscale is none provided.', metavar=('min', 'max'))
+    parser.add_argument('-file_id', default='', help='Add additional information about the image, e.g. sub_id, to be shown with the filename.')
+    parser.add_argument('-mask_id', default='', help='Add additional information about the mask, e.g. sub_id, to be shown with the filename.')
+    parser.add_argument('-clobber', action='store_true', help='If -clobber, existing file will be overwritten.')
 
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
-    # DEBUGGNING
-    class args:
-        # img_file = '/Users/au483096/Desktop/stx2_0004_20211007_082130_t1.mnc' # ZYX
-        # mask_file = '/Users/au483096/Desktop/gm.mnc' # ZYX
-        # outfile = '/Users/au483096/Desktop/test_flip_zyx.jpg'
-        img_file = '/Users/au483096/Desktop/0001.mnc' # XZY
-        mask_file = '/Users/au483096/Desktop/perfusion_roi.mnc' # XZY
-        outfile = '/Users/au483096/Desktop/test_flip_xzy.jpg'
-        img_cmap = 'gray'
-        mask_cmap = 'jet'
-        img_range = None
-        mask_range = None
-        file_id = ''
-        mask_id = ''
-        clobber = True
+    # # DEBUGGNING
+    # class args:
+    #     # img_file = '/Users/au483096/Desktop/stx2_0004_20211007_082130_t1.mnc' # ZYX
+    #     # mask_file = '/Users/au483096/Desktop/gm.mnc' # ZYX
+    #     # outfile = '/Users/au483096/Desktop/test_flip_zyx.jpg'
+    #     img_file = '/Users/au483096/Desktop/0001.mnc' # XZY
+    #     mask_file = '/Users/au483096/Desktop/perfusion_roi.mnc' # XZY
+    #     outfile = '/Users/au483096/Desktop/test_flip_xzy.jpg'
+    #     img_cmap = 'gray'
+    #     mask_cmap = 'jet'
+    #     img_range = None
+    #     mask_range = None
+    #     file_id = ''
+    #     mask_id = ''
+    #     clobber = True
 
     main(args)
