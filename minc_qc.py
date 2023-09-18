@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import matplotlib
-matplotlib.use('agg')
+# matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import pyminc.volumes.factory as minc
 import numpy as np
@@ -50,6 +50,10 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
             img_minc.dimnames[1]: img_data.shape[1],
             img_minc.dimnames[2]: img_data.shape[2]}
     
+    steps = {img_minc.dimnames[0]: img_minc.separations[0],
+             img_minc.dimnames[1]: img_minc.separations[1],
+             img_minc.dimnames[2]: img_minc.separations[2]}
+    
     views = {'xspace': [round(i) for i in np.linspace(dims['xspace']/4,dims['xspace']-(dims['xspace']/4),9)],
              'yspace': [round(i) for i in np.linspace(dims['yspace']/4,dims['yspace']-(dims['yspace']/4),9)],
              'zspace': [round(i) for i in np.linspace(dims['zspace']/4,dims['zspace']-(dims['zspace']/4),9)]}
@@ -62,9 +66,31 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
                       mask_minc.dimnames[1]: [mask_data[:,v,:] for v in views[mask_minc.dimnames[1]]],
                       mask_minc.dimnames[2]: [mask_data[:,:,v] for v in views[mask_minc.dimnames[2]]]}
     
-    # Flip zspace 
-    img_data_show['zspace'] = [np.flip(v) for v in img_data_show['zspace']]
-    mask_data_show['zspace'] = [np.flip(v) for v in mask_data_show['zspace']]
+    # Flip data  
+    if steps['xspace'] > 0 and steps['yspace'] > 0 and steps['zspace'] > 0:
+        img_data_show['zspace'] = [np.flip(v,0) for v in img_data_show['zspace']]
+        mask_data_show['zspace'] = [np.flip(v,0) for v in mask_data_show['zspace']]
+
+        img_data_show['yspace'] = [np.flip(v,0) for v in img_data_show['yspace']]
+        mask_data_show['yspace'] = [np.flip(v,0) for v in mask_data_show['yspace']]
+
+        img_data_show['xspace'] = [np.flip(v,0) for v in img_data_show['xspace']]
+        mask_data_show['xspace'] = [np.flip(v,0) for v in mask_data_show['xspace']]
+    elif steps['xspace'] > 0 and steps['yspace'] < 0 and steps['zspace'] > 0:
+        img_data_show['zspace'] = [np.transpose(v) for v in img_data_show['zspace']]
+        # img_data_show['zspace'] = [np.flip(v) for v in img_data_show['zspace']]
+        mask_data_show['zspace'] = [np.transpose(v) for v in mask_data_show['zspace']]
+        # mask_data_show['zspace'] = [np.flip(v) for v in mask_data_show['zspace']]
+
+        img_data_show['yspace'] = [np.transpose(v) for v in img_data_show['yspace']]
+        img_data_show['yspace'] = [np.flip(v,0) for v in img_data_show['yspace']]
+        mask_data_show['yspace'] = [np.transpose(v) for v in mask_data_show['yspace']]
+        mask_data_show['yspace'] = [np.flip(v,0) for v in mask_data_show['yspace']]
+        
+        img_data_show['xspace'] = [np.flip(v) for v in img_data_show['xspace']]
+        mask_data_show['xspace'] = [np.flip(v) for v in mask_data_show['xspace']]
+    else: 
+        print('Warning! Direction of minc files not implemented. Images may be flipped.. ')
 
     fig = plt.figure(figsize=(17,10))
 
@@ -143,29 +169,34 @@ def transparent_cmap(cmap_str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Script to plot QC of minc image and mask')
-    parser.add_argument('img_file', help='Location of image file to show.')
-    parser.add_argument('mask_file', help='Location of mask file to overlay on image.')
-    parser.add_argument('outfile', help='Location of output. Should be .jpg or .png.')
-    parser.add_argument('-img_cmap', default='gray', help='Matlplotlib cmap to plot image. Default is gray.')
-    parser.add_argument('-mask_cmap', default='jet', help='Matlplotlib cmap to plot mask. Default is jet.')
-    parser.add_argument('-img_range', nargs=2, default=None, help='Min Max range of image. Autoscale is none provided.', metavar=('min', 'max'))
-    parser.add_argument('-mask_range', nargs=2, default=None, help='Min Max range of mask. Autoscale is none provided.', metavar=('min', 'max'))
-    parser.add_argument('-file_id', default='', help='Add additional information about the image, e.g. sub_id, to be shown with the filename.')
-    parser.add_argument('-mask_id', default='', help='Add additional information about the mask, e.g. sub_id, to be shown with the filename.')
-    parser.add_argument('-clobber', action='store_true', help='If -clobber, existing file will be overwritten.')
+    # parser = argparse.ArgumentParser(description='Script to plot QC of minc image and mask')
+    # parser.add_argument('img_file', help='Location of image file to show.')
+    # parser.add_argument('mask_file', help='Location of mask file to overlay on image.')
+    # parser.add_argument('outfile', help='Location of output. Should be .jpg or .png.')
+    # parser.add_argument('-img_cmap', default='gray', help='Matlplotlib cmap to plot image. Default is gray.')
+    # parser.add_argument('-mask_cmap', default='jet', help='Matlplotlib cmap to plot mask. Default is jet.')
+    # parser.add_argument('-img_range', nargs=2, default=None, help='Min Max range of image. Autoscale is none provided.', metavar=('min', 'max'))
+    # parser.add_argument('-mask_range', nargs=2, default=None, help='Min Max range of mask. Autoscale is none provided.', metavar=('min', 'max'))
+    # parser.add_argument('-file_id', default='', help='Add additional information about the image, e.g. sub_id, to be shown with the filename.')
+    # parser.add_argument('-mask_id', default='', help='Add additional information about the mask, e.g. sub_id, to be shown with the filename.')
+    # parser.add_argument('-clobber', action='store_true', help='If -clobber, existing file will be overwritten.')
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
     # DEBUGGNING
-    # class args:
-    #     img_file = '/Volumes/projects/MINDLAB2021_MR-APOE-Microcirculation/scratch/minc/0004/pet/t1_resampled_H2O_1.mnc'
-    #     mask_file = '/Volumes/projects/MINDLAB2021_MR-APOE-Microcirculation/scratch/minc/0004/pet/lobes_bin_H2O_2.mnc'
-    #     outfile = 'test.jpg'
-    #     img_cmap = 'gray'
-    #     mask_cmap = 'jet'
-    #     img_range = None
-    #     mask_range = None
-    #     clobber = False
+    class args:
+        # img_file = '/Users/au483096/Desktop/stx2_0004_20211007_082130_t1.mnc' # ZYX
+        # mask_file = '/Users/au483096/Desktop/gm.mnc' # ZYX
+        # outfile = '/Users/au483096/Desktop/test_flip_zyx.jpg'
+        img_file = '/Users/au483096/Desktop/0001.mnc' # XZY
+        mask_file = '/Users/au483096/Desktop/perfusion_roi.mnc' # XZY
+        outfile = '/Users/au483096/Desktop/test_flip_xzy.jpg'
+        img_cmap = 'gray'
+        mask_cmap = 'jet'
+        img_range = None
+        mask_range = None
+        file_id = ''
+        mask_id = ''
+        clobber = True
 
     main(args)
