@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import matplotlib
-# matplotlib.use('agg')
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import pyminc.volumes.factory as minc
 import numpy as np
