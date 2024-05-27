@@ -18,11 +18,12 @@ def main(args):
     mask_range = args.mask_range
     file_id = args.file_id
     mask_id = args.mask_id
+    info = args.info
     clobber = args.clobber
 
-    minc_qc(img_file, mask_file, outfile, img_cmap=img_cmap, mask_cmap=mask_cmap, img_range=img_range, mask_range=mask_range, file_id=file_id, mask_id=mask_id, clobber=clobber)
+    minc_qc(img_file, mask_file, outfile, img_cmap=img_cmap, mask_cmap=mask_cmap, img_range=img_range, mask_range=mask_range, file_id=file_id, mask_id=mask_id, info=info, clobber=clobber)
 
-def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral', img_range=None, mask_range=None, file_id='', mask_id='', clobber=False):
+def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral', img_range=None, mask_range=None, file_id='', mask_id='', info='', clobber=False):
 
     if not clobber and os.path.exists(outfile):
         print(f'{outfile} already exists. Use -clobber to overwrite.')
@@ -153,6 +154,7 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
     plt.subplots_adjust(wspace=-0.1, hspace=-0.1)
     fig.text(.02, .98, f'{file_id} {img_file.split("/")[-1]}', horizontalalignment='left', verticalalignment='center', color='white')
     fig.text(.02, .96, f'{mask_id} {mask_file.split("/")[-1]}', horizontalalignment='left', verticalalignment='center', color='white')
+    fig.text(.02, .94, f'{info}', horizontalalignment='left', verticalalignment='center', color='white')
 
     plt.savefig(outfile)
     
@@ -179,6 +181,7 @@ if __name__ == "__main__":
     parser.add_argument('-mask_range', nargs=2, default=None, help='Min Max range of mask. Autoscale is none provided.', metavar=('min', 'max'))
     parser.add_argument('-file_id', default='', help='Add additional information about the image, e.g. sub_id, to be shown with the filename.')
     parser.add_argument('-mask_id', default='', help='Add additional information about the mask, e.g. sub_id, to be shown with the filename.')
+    parser.add_argument('-info', default='', help='Add additional information to be shown on the figure.')
     parser.add_argument('-clobber', action='store_true', help='If -clobber, existing file will be overwritten.')
 
     args = parser.parse_args()

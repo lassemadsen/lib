@@ -45,8 +45,8 @@ if __name__ == '__main__':
     parser.add_argument('-mask', default=None, nargs=2, metavar=('left_mask', 'right_mask'), help='Location of mask for left and right hemisphere')
     parser.add_argument('-mask_value', default=None, type=float, help='Mask values on surface. Can be float or nan. If mask is set, this argument is ignored')
     parser.add_argument('-cbar_loc', default='left', choices=['left', 'bottom', 'none'], help='Location of colorbar. If None, no colorbar is displayed')
-    parser.add_argument('-cbar_title', default='Mean', type=str, help='Title of the colorbar')
-    parser.add_argument('-title', default=None, help='Title of the plot')
+    parser.add_argument('-cbar_title', default=None, type=str, help='Title of the colorbar')
+    parser.add_argument('-title', default=None, type=str, help='Title of the plot')
     parser.add_argument('-cmap', default='turbo', help='Colormap of the plot. Can be any cmap from matplotlib')
     parser.add_argument('-clobber', action='store_true', help='Overwrite existing files.')
 
