@@ -16,8 +16,10 @@ def main(args):
 
     # Define mask
     if args.mask is not None:
-        mask = {'left': args.mask[0],
-                'right': args.mask[1]}
+        mask_left = np.loadtxt(args.mask[0], skiprows=1)
+        mask_right = np.loadtxt(args.mask[1], skiprows=1)
+        mask = {'left': mask_left,
+                'right': mask_right}
         # check_data_header(mask)
     else:
         if args.mask_value is not None:
