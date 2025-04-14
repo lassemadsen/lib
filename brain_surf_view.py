@@ -5,6 +5,7 @@ warnings.simplefilter(action='ignore', category=UserWarning)
 
 import argparse
 import numpy as np
+import pandas as pd
 from visbrain.objects import BrainObj
 from visbrain.gui import Brain
 import sys
@@ -97,8 +98,9 @@ def main(args):
             b_obj = BrainObj(surface['both'], translucent=False, hemisphere='both')
         else:
             try:
-                data = np.loadtxt(args.data)
-                data = np.nan_to_num(data)
+                data = pd.read_csv(args.data)
+                data = data.replace(np.nan, -1)
+                data = np.array(data.iloc[:,0])
             except :
                 print('Error: Data file could not be loaded')
                 exit()

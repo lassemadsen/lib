@@ -5,7 +5,7 @@ import os
 
 def main(args):
     # Check clobber
-    if os.path.isfile(args.output):
+    if os.path.isfile(args.output) and not args.clobber:
         print(f'{args.output} exists! Use clobber to overwrite.')
         return
 
@@ -32,8 +32,8 @@ def main(args):
         # check_data_header(mask)
     else:
         if args.mask_value is not None:
-            mask = {'left': data_left!=args.mask_value,
-                    'right': data_right!=args.mask_value}
+            mask = {'left': data_left != args.mask_value,
+                    'right': data_right != args.mask_value}
         else:
             mask = None
 
