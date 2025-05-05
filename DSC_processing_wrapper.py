@@ -24,7 +24,7 @@ def main(args):
     filtered_series = q.filter_series(types=pwi_type, subjects=subject, return_files=True)
     filtered_series = [f for f in filtered_series if f['study'] == timepoint][0]
 
-    project_dir = f'{path_prefix}/projects/{project}/scratch/'
+    project_dir = f'{path_prefix}/projects/{project}/scratch'
 
     sub_id = filtered_series['subject'].zfill(4)
     tp = filtered_series['study']
@@ -33,13 +33,27 @@ def main(args):
 
     info = convert_pwi(filtered_series, img_file)
 
+    print(f'    Running DSC {pwi_type} processing for {sub_id} - {timepoint}...'flush=True)
     proc = DSC_process(sub_id, tp, pwi_type, img_file, info, project_dir, branch)
+    
+    print(f'    Performing slice-time correction...', end='', flush=True)
     proc.slice_time_correction()
+    print(' \u2713')
+    print(f'    Masking image...', end='', flush=True)
     proc.mask_image()
+    print(' \u2713')
+    print(f'    Detecting baseline...', end='', flush=True)
     proc.baseline_detection()
+    print(' \u2713')
+    print(f'    Truncating signal...', end='', flush=True)
     proc.truncate_signal()
+    print(' \u2713')
+    print(f'    Performing motion correction...', end='', flush=True)
     proc.motion_correction()
+    print(' \u2713')
+    print(f'    Calculating concentration...', end='', flush=True)
     proc.calc_concentration()
+    print(' \u2713')
 
     t1_type = 'T1UNI'
     t1_file = f'{project_dir}/data{structural_branch}/{sub_id}/{tp}/MR/{t1_type}/NATSPACE/0001.nii'
