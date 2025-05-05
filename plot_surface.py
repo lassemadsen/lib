@@ -13,10 +13,14 @@ def main(args):
     views = args.views
 
     # Load data
-    data_left = np.loadtxt(args.data_left, skiprows=1)
-    data_right = np.loadtxt(args.data_right, skiprows=1)
+    data_left = np.genfromtxt(args.data_left, dtype=float, missing_values="")
+    data_right = np.genfromtxt(args.data_right, dtype=float, missing_values="")
 
-    data = {'left': data_left,
+    # Skip header row # TODO check if there is a header row
+    data_left = data_left[1:]
+    data_right = data_right[1:]
+
+    data = {'left': data_left,  
             'right': data_right}
     # check_data_header(data)
 
@@ -35,7 +39,14 @@ def main(args):
             mask = {'left': data_left != args.mask_value,
                     'right': data_right != args.mask_value}
         else:
-            mask = None
+            mask = {'left': np.ones_like(data_left),
+                    'right': np.ones_like(data_right)}
+    
+    mask['left'][np.isnan(data_left)] = 0
+    mask['right'][np.isnan(data_right)] = 0
+
+    mask['left'] =  mask['left'].astype(bool)
+    mask['right'] =  mask['right'].astype(bool)
 
     plot_surface.plot_surface(data, args.output, surface=surface, vlim=args.vlim, mask=mask, cbar_loc=args.cbar_loc, 
                               cbar_title=args.cbar_title, title=args.title, cmap=args.cmap, views=views, clobber=args.clobber)
@@ -65,6 +76,22 @@ if __name__ == '__main__':
     parser.add_argument('-clobber', action='store_true', help='Overwrite existing files.')
 
     args = parser.parse_args()
+
+    # class args():
+    #     surface_left = '/Users/au483096/data/surface/mni_icbm152_t1_tal_nlin_sym_09c_left_smooth.obj'
+    #     surface_right = '/Users/au483096/data/surface/mni_icbm152_t1_tal_nlin_sym_09c_right_smooth.obj'
+    #     data_left = '/Volumes/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/surface_data/0049/bl/0049_20150626_082005_mid_left_SEPWI_RTH_std_blur20.dat'
+    #     data_right = '/Volumes/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/surface_data/0049/bl/0049_20150626_082005_mid_right_SEPWI_RTH_std_blur20.dat'
+    #     output = '/Users/au483096/Desktop/test.jpg'
+    #     vlim = None
+    #     mask = None
+    #     mask_value = None
+    #     cbar_loc = None
+    #     cbar_title = None
+    #     title = None
+    #     cmap = 'turbo'
+    #     views = 'standard'
+    #     clobber = False
 
     # Convert none string to None
     if args.cbar_loc == 'none':

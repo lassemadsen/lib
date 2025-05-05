@@ -15,13 +15,14 @@ home = expanduser("~")
 
 surface_dir = f'{home}/data/surface'
 
-SURFACE_MNI = {'left': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_left_smooth.gii',
-               'right': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_right_smooth.gii',
-               'both': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_both_smooth.gii'}
+SURFACE_MNI = {'left': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_left_smooth.obj',
+               'right': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_right_smooth.obj',
+               'both': f'{surface_dir}/mni_icbm152_t1_tal_nlin_sym_09c_both_smooth.obj'}
 
 N_VERTEX_MNI = {'left': 81349,
                 'right': 81233}
 
+# NOTE Not sure of .gii files are working?? 
 SURFACE_FS = {'left': f'{surface_dir}/lh.pial.gii',
                'right': f'{surface_dir}/rh.pial.gii',
                'both': f'{surface_dir}/both.pial.gii'}
