@@ -2,7 +2,8 @@
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-import pyminc.volumes.factory as minc
+import nibabel as nib
+from nibabel.orientations import aff2axcodes
 import numpy as np
 import matplotlib.cm as cm
 import argparse
@@ -29,12 +30,33 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
         print(f'{outfile} already exists. Use -clobber to overwrite.')
         return
 
-    img_minc = minc.volumeFromFile(img_file)
-    img_data = np.array(img_minc[:])
+    img = nib.load(img_file)
+    img_data = img.get_fdata()
+    img_affine = img.affine
 
-    mask_minc = minc.volumeFromFile(mask_file)
-    mask_data = np.array(mask_minc[:])
-    assert img_data.shape == mask_data.shape, 'Error: Dimensions of images do not match!'
+    mask = nib.load(mask_file)
+    mask_data = mask.get_fdata()
+    mask_affine = mask.affine
+
+    # Check identical affine by comparing dimension and determinant:
+    det1 = np.linalg.det(img_affine[:3, :3])
+    det2 = np.linalg.det(mask_affine[:3, :3])
+
+    if not np.isclose(det1,det2):
+        print('Error. Image and mask do not have same dimension..')
+        return
+
+    axcodes = aff2axcodes(img_affine)
+
+    dim_names = []
+    for a in axcodes:
+        if a in ['L', 'R']:
+            dim_names.extend(['x'])
+        elif a in ['A', 'P']:
+            dim_names.extend(['y'])
+        elif a in ['S', 'I']:
+            dim_names.extend(['z'])
+        
 
     if img_range is None:
         img_range = [img_data.min(), img_data.max()]
@@ -47,51 +69,28 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
         assert len(mask_range) == 2, f"Mask range should be [min, max]. Got: {mask_range}"
         mask_cmap = transparent_cmap(mask_cmap)
 
-    dims = {img_minc.dimnames[0]: img_data.shape[0],
-            img_minc.dimnames[1]: img_data.shape[1],
-            img_minc.dimnames[2]: img_data.shape[2]}
-    
-    steps = {img_minc.dimnames[0]: img_minc.separations[0],
-             img_minc.dimnames[1]: img_minc.separations[1],
-             img_minc.dimnames[2]: img_minc.separations[2]}
-    
-    views = {'xspace': [round(i) for i in np.linspace(dims['xspace']/4,dims['xspace']-(dims['xspace']/4),9)],
-             'yspace': [round(i) for i in np.linspace(dims['yspace']/4,dims['yspace']-(dims['yspace']/4),9)],
-             'zspace': [round(i) for i in np.linspace(dims['zspace']/4,dims['zspace']-(dims['zspace']/4),9)]}
+    # Determine flipping for each axis based on the sign of the affine
+    # The columns of the 3x3 affine submatrix show the voxel directions in world space
+    flips = np.sign(np.diag(img_affine[:3, :3])) < 0  # Boolean: [flip_x, flip_y, flip_z]
 
-    img_data_show = {img_minc.dimnames[0]: [img_data[v,:,:] for v in views[img_minc.dimnames[0]]],
-                    img_minc.dimnames[1]: [img_data[:,v,:] for v in views[img_minc.dimnames[1]]],
-                    img_minc.dimnames[2]: [img_data[:,:,v] for v in views[img_minc.dimnames[2]]]}
+    # Apply flipping to the volume
+    for axis, do_flip in enumerate(flips):
+        if do_flip:
+            img_data = np.flip(img_data, axis=axis)
+            mask_data = np.flip(mask_data, axis=axis)
     
-    mask_data_show = {mask_minc.dimnames[0]: [mask_data[v,:,:] for v in views[mask_minc.dimnames[0]]],
-                      mask_minc.dimnames[1]: [mask_data[:,v,:] for v in views[mask_minc.dimnames[1]]],
-                      mask_minc.dimnames[2]: [mask_data[:,:,v] for v in views[mask_minc.dimnames[2]]]}
+    views = {dim_names[0]: [round(i) for i in np.linspace(img_data.shape[0]/4,img_data.shape[0]-(img_data.shape[0]/4),9)],
+             dim_names[1]: [round(i) for i in np.linspace(img_data.shape[1]/4,img_data.shape[1]-(img_data.shape[1]/4),9)],
+             dim_names[2]: [round(i) for i in np.linspace(img_data.shape[2]/4,img_data.shape[2]-(img_data.shape[2]/4),9)]}
+
+    img_data_show = {dim_names[0]: [img_data[v,:,:] for v in views[dim_names[0]]],
+                     dim_names[1]: [img_data[:,v,:] for v in views[dim_names[1]]],
+                     dim_names[2]: [img_data[:,:,v] for v in views[dim_names[2]]]}
     
-    # Flip data  
-    if steps['xspace'] > 0 and steps['yspace'] > 0 and steps['zspace'] > 0:
-        img_data_show['zspace'] = [np.flip(v,0) for v in img_data_show['zspace']]
-        mask_data_show['zspace'] = [np.flip(v,0) for v in mask_data_show['zspace']]
-
-        img_data_show['yspace'] = [np.flip(v,0) for v in img_data_show['yspace']]
-        mask_data_show['yspace'] = [np.flip(v,0) for v in mask_data_show['yspace']]
-
-        img_data_show['xspace'] = [np.flip(v,0) for v in img_data_show['xspace']]
-        mask_data_show['xspace'] = [np.flip(v,0) for v in mask_data_show['xspace']]
-    elif steps['xspace'] > 0 and steps['yspace'] < 0 and steps['zspace'] > 0:
-        img_data_show['zspace'] = [np.transpose(v) for v in img_data_show['zspace']]
-        # img_data_show['zspace'] = [np.flip(v) for v in img_data_show['zspace']]
-        mask_data_show['zspace'] = [np.transpose(v) for v in mask_data_show['zspace']]
-        # mask_data_show['zspace'] = [np.flip(v) for v in mask_data_show['zspace']]
-
-        img_data_show['yspace'] = [np.transpose(v) for v in img_data_show['yspace']]
-        img_data_show['yspace'] = [np.flip(v,0) for v in img_data_show['yspace']]
-        mask_data_show['yspace'] = [np.transpose(v) for v in mask_data_show['yspace']]
-        mask_data_show['yspace'] = [np.flip(v,0) for v in mask_data_show['yspace']]
-        
-        img_data_show['xspace'] = [np.flip(v) for v in img_data_show['xspace']]
-        mask_data_show['xspace'] = [np.flip(v) for v in mask_data_show['xspace']]
-    else: 
-        print('Warning! Direction of minc files not implemented. Images may be flipped.. ')
+    mask_data_show = {dim_names[0]: [mask_data[v,:,:] for v in views[dim_names[0]]],
+                      dim_names[1]: [mask_data[:,v,:] for v in views[dim_names[1]]],
+                      dim_names[2]: [mask_data[:,:,v] for v in views[dim_names[2]]]}
+    
 
     fig = plt.figure(figsize=(17,10))
 
@@ -116,37 +115,37 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
 
     alpha = 0.5
 
-    x_views = list(range(len(views['xspace'])))
-    y_views = list(range(len(views['yspace'])))
-    z_views = list(range(len(views['zspace'])))
+    x_views = list(range(len(views['x'])))
+    y_views = list(range(len(views['y'])))
+    z_views = list(range(len(views['z'])))
 
     for a in ax:
         large_view = 5 # Location of the large (top row) view from x,y,z_views lists. 
 
         # Top row - Large view
         if a.get_subplotspec().get_geometry()[2] == 0:
-            a.imshow(img_data_show['xspace'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['xspace'][large_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(img_data_show['x'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['x'][large_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
         elif a.get_subplotspec().get_geometry()[2] == 3:
-            a.imshow(img_data_show['yspace'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['yspace'][large_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(img_data_show['y'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['y'][large_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
         elif a.get_subplotspec().get_geometry()[2] == 6:
-            a.imshow(img_data_show['zspace'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['zspace'][large_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(img_data_show['z'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['z'][large_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
 
         # Small views
         elif a.get_subplotspec().get_geometry()[2] in [27, 28, 29, 36, 37, 38, 45, 46, 47]:
             x_view = x_views.pop(0)
-            a.imshow(img_data_show['xspace'][x_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['xspace'][x_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(img_data_show['x'][x_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['x'][x_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
         elif a.get_subplotspec().get_geometry()[2] in [30, 31, 32, 39, 40, 41, 48, 49, 50]:
             y_view = y_views.pop(0)
-            a.imshow(img_data_show['yspace'][y_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['yspace'][y_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(img_data_show['y'][y_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['y'][y_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
         elif a.get_subplotspec().get_geometry()[2] in [33, 34, 35, 42, 43, 44, 51, 52, 53]:
             z_view = z_views.pop(0)
-            a.imshow(img_data_show['zspace'][z_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['zspace'][z_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(img_data_show['z'][z_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['z'][z_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
 
         a.axis('off')
 
@@ -191,15 +190,16 @@ if __name__ == "__main__":
     #     # img_file = '/Users/au483096/Desktop/stx2_0004_20211007_082130_t1.mnc' # ZYX
     #     # mask_file = '/Users/au483096/Desktop/gm.mnc' # ZYX
     #     # outfile = '/Users/au483096/Desktop/test_flip_zyx.jpg'
-    #     img_file = '/Users/au483096/Desktop/0001.mnc' # XZY
-    #     mask_file = '/Users/au483096/Desktop/perfusion_roi.mnc' # XZY
-    #     outfile = '/Users/au483096/Desktop/test_flip_xzy.jpg'
+    #     img_file = '/Users/au483096/Desktop/pib.mnc'
+    #     mask_file = '/Users/au483096/Desktop/pib.mnc'
+    #     outfile = '/Users/au483096/Desktop/test.jpg'
     #     img_cmap = 'gray'
     #     mask_cmap = 'jet'
     #     img_range = None
     #     mask_range = None
     #     file_id = ''
     #     mask_id = ''
+    #     info = ''
     #     clobber = True
 
     main(args)
