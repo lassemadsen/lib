@@ -31,27 +31,28 @@ def main(args):
     pwi_type = filtered_series['type']
     img_file = f'{project_dir}/data{branch}/{sub_id}/{tp}/MR/{pwi_type}/NATSPACE/0001.nii'
 
+    print(f'Converting {pwi_type} image...', end='', flush=True)
     info = convert_pwi(filtered_series, img_file)
 
-    print(f'    Running DSC {pwi_type} processing for {sub_id} - {timepoint}...'flush=True)
+    print(f'Running DSC {pwi_type} processing for {sub_id} - {timepoint}...', flush=True)
     proc = DSC_process(sub_id, tp, pwi_type, img_file, info, project_dir, branch)
     
-    print(f'    Performing slice-time correction...', end='', flush=True)
+    print(f'Performing slice-time correction...', end='', flush=True)
     proc.slice_time_correction()
     print(' \u2713')
-    print(f'    Masking image...', end='', flush=True)
+    print(f'Masking image...', end='', flush=True)
     proc.mask_image()
     print(' \u2713')
-    print(f'    Detecting baseline...', end='', flush=True)
+    print(f'Detecting baseline...', end='', flush=True)
     proc.baseline_detection()
     print(' \u2713')
-    print(f'    Truncating signal...', end='', flush=True)
+    print(f'Truncating signal...', end='', flush=True)
     proc.truncate_signal()
     print(' \u2713')
-    print(f'    Performing motion correction...', end='', flush=True)
+    print(f'Performing motion correction...', end='', flush=True)
     proc.motion_correction()
     print(' \u2713')
-    print(f'    Calculating concentration...', end='', flush=True)
+    print(f'Calculating concentration...', end='', flush=True)
     proc.calc_concentration()
     print(' \u2713')
 
