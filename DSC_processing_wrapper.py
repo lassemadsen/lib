@@ -21,11 +21,8 @@ def main(args):
     pwi_type = args.pwi_type
 
     q = Query(project)
-    filtered_series = q.filter_series(types=pwi_type, subjects=subject, return_files=False)
+    filtered_series = q.filter_series(types=pwi_type, subjects=subject, return_files=True)
     filtered_series = [f for f in filtered_series if f['study'] == timepoint][0]
-
-    print('series:')
-    print(filtered_series)
 
     project_dir = f'{path_prefix}/projects/{project}/scratch/'
 
