@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import matplotlib
-matplotlib.use('agg')
+# matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import nibabel as nib
-from nibabel.orientations import aff2axcodes
+from nibabel.orientations import aff2axcodes, io_orientation, axcodes2ornt, ornt_transform, apply_orientation
 import numpy as np
 import matplotlib.cm as cm
 import argparse
@@ -49,15 +49,28 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
     axcodes = aff2axcodes(img_affine)
 
     dim_names = []
+    target_orientation = []
     for a in axcodes:
         if a in ['L', 'R']:
             dim_names.extend(['x'])
+            target_orientation.extend(['L'])
         elif a in ['A', 'P']:
             dim_names.extend(['y'])
+            target_orientation.extend(['A'])
         elif a in ['S', 'I']:
             dim_names.extend(['z'])
-        
+            target_orientation.extend(['I'])
+    
+    target_ornt = axcodes2ornt(target_orientation)
+    current_ornt = io_orientation(img_affine)
+    transform = ornt_transform(current_ornt, target_ornt)
+    img_data = apply_orientation(img_data, transform)
+    mask_data = apply_orientation(mask_data, transform)
 
+    # if np.signbit(img_affine[dim_names.index('z'), dim_names.index('z')]):
+    #     img_data = np.flip(img_data, (1,2)) # dim_names.index('z'))
+    #     mask_data = np.flip(mask_data, (1,2)) # dim_names.index('z'))
+        
     if img_range is None:
         img_range = [img_data.min(), img_data.max()]
     else:
@@ -69,16 +82,6 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
         assert len(mask_range) == 2, f"Mask range should be [min, max]. Got: {mask_range}"
         mask_cmap = transparent_cmap(mask_cmap)
 
-    # Determine flipping for each axis based on the sign of the affine
-    # The columns of the 3x3 affine submatrix show the voxel directions in world space
-    flips = np.sign(np.diag(img_affine[:3, :3])) < 0  # Boolean: [flip_x, flip_y, flip_z]
-
-    # Apply flipping to the volume
-    for axis, do_flip in enumerate(flips):
-        if do_flip:
-            img_data = np.flip(img_data, axis=axis)
-            mask_data = np.flip(mask_data, axis=axis)
-    
     views = {dim_names[0]: [round(i) for i in np.linspace(img_data.shape[0]/4,img_data.shape[0]-(img_data.shape[0]/4),9)],
              dim_names[1]: [round(i) for i in np.linspace(img_data.shape[1]/4,img_data.shape[1]-(img_data.shape[1]/4),9)],
              dim_names[2]: [round(i) for i in np.linspace(img_data.shape[2]/4,img_data.shape[2]-(img_data.shape[2]/4),9)]}
@@ -91,7 +94,10 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
                       dim_names[1]: [mask_data[:,v,:] for v in views[dim_names[1]]],
                       dim_names[2]: [mask_data[:,:,v] for v in views[dim_names[2]]]}
     
-
+    # Flip z-axis:
+    img_data_show['z'] = [np.flip(i) for i in img_data_show['z']]
+    mask_data_show['z'] = [np.flip(i) for i in mask_data_show['z']]
+    
     fig = plt.figure(figsize=(17,10))
 
     ax = []
@@ -155,7 +161,7 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
     fig.text(.02, .96, f'{mask_id} {mask_file.split("/")[-1]}', horizontalalignment='left', verticalalignment='center', color='white')
     fig.text(.02, .94, f'{info}', horizontalalignment='left', verticalalignment='center', color='white')
 
-    plt.savefig(outfile)
+    plt.savefig(outfile, dpi=300)
     
 
 def transparent_cmap(cmap_str):
@@ -190,8 +196,8 @@ if __name__ == "__main__":
     #     # img_file = '/Users/au483096/Desktop/stx2_0004_20211007_082130_t1.mnc' # ZYX
     #     # mask_file = '/Users/au483096/Desktop/gm.mnc' # ZYX
     #     # outfile = '/Users/au483096/Desktop/test_flip_zyx.jpg'
-    #     img_file = '/Users/au483096/Desktop/pib.mnc'
-    #     mask_file = '/Users/au483096/Desktop/pib.mnc'
+    #     img_file = '/Users/au483096/Desktop/oef.mnc'
+    #     mask_file = '/Users/au483096/Desktop/oef.mnc'
     #     outfile = '/Users/au483096/Desktop/test.jpg'
     #     img_cmap = 'gray'
     #     mask_cmap = 'jet'

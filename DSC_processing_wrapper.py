@@ -2,7 +2,6 @@
 from pathlib import Path
 import nibabel as nib
 import ants
-from DSC_processing import DSC_process
 from stormdb.access import Query
 from stormdb_functions import convert_pwi
 import argparse
@@ -11,6 +10,10 @@ if str(Path('__file__').resolve()).startswith('/Volumes'):
     path_prefix = '/Volumes'
 else:
     path_prefix = ''
+    import sys
+    sys.path.extend(['/public/lama/python_functions/DSC_processing'])
+
+from DSC_processing import DSC_process
 
 def main(args):
     project = args.project
