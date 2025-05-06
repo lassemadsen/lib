@@ -32,33 +32,18 @@ def main(args):
     sub_id = filtered_series['subject'].zfill(4)
     tp = filtered_series['study']
     pwi_type = filtered_series['type']
-    img_file = f'{project_dir}/data{branch}/{sub_id}/{tp}/MR/{pwi_type}/NATSPACE/0001.nii'
+    img_file = f'{project_dir}/DSC_analysis{branch}/data/{sub_id}/{tp}/MR/{pwi_type}/NATSPACE/0001.nii'
 
-    print(f'Converting {pwi_type} image...', end='', flush=True)
+    # TODO ensure branch does not exits
+
+    print(f'Converting {pwi_type} image...', flush=True)
     info = convert_pwi(filtered_series, img_file)
 
     print(f'Running DSC {pwi_type} processing for {sub_id} - {timepoint}...', flush=True)
     proc = DSC_process(sub_id, tp, pwi_type, img_file, info, project_dir, branch)
-    
-    print(f'Performing slice-time correction...', end='', flush=True)
-    proc.slice_time_correction()
-    print(' \u2713')
-    print(f'Masking image...', end='', flush=True)
-    proc.mask_image()
-    print(' \u2713')
-    print(f'Detecting baseline...', end='', flush=True)
-    proc.baseline_detection()
-    print(' \u2713')
-    print(f'Truncating signal...', end='', flush=True)
-    proc.truncate_signal()
-    print(' \u2713')
-    print(f'Performing motion correction...', end='', flush=True)
-    proc.motion_correction()
-    print(' \u2713')
-    print(f'Calculating concentration...', end='', flush=True)
-    proc.calc_concentration()
-    print(' \u2713')
 
+    # Create masks 
+    print(f'Creating masks', end='', flush=True)
     t1_type = 'T1UNI'
     t1_file = f'{project_dir}/data{structural_branch}/{sub_id}/{tp}/MR/{t1_type}/NATSPACE/0001.nii'
     t1_mask_dir = f'{project_dir}/masks{structural_branch}/{sub_id}/{tp}/MR/{t1_type}/NATSPACE'
@@ -76,7 +61,7 @@ def main(args):
     mask_dir_pwi_space = f'{proc.mask_dir}/{t1_type}/{pwi_type}SPACE'
     Path(mask_dir_pwi_space).mkdir(parents=True, exist_ok=True)
 
-    for mask_file in ['struc_gm.nii', 'struc_wm.nii', 'AIFsearchMask.nii']:
+    for mask_file in ['struc_gm.nii', 'struc_wm.nii', 'struc_t1mask.nii', 'AIFsearchMask.nii']:
         mask = ants.image_read(f'{t1_mask_dir}/{mask_file}')
 
         interpolator = 'nearestNeighbor'
@@ -88,6 +73,9 @@ def main(args):
     # Create smooth mask
     gm_mask_file = f'{mask_dir_pwi_space}/struc_gm.nii'
     wm_mask_file = f'{mask_dir_pwi_space}/struc_wm.nii'
+    t1_mask_file = f'{mask_dir_pwi_space}/struc_t1mask.nii'
+    aif_search_mask_file = f'{mask_dir_pwi_space}/AIFsearchMask.nii'
+
     gm_mask = nib.load(gm_mask_file)
     wm_mask = nib.load(wm_mask_file)
     smooth_mask = (gm_mask.get_fdata()) + (wm_mask.get_fdata())
@@ -96,11 +84,42 @@ def main(args):
     smooth_mask_to_save = nib.Nifti1Image(smooth_mask, gm_mask.affine, gm_mask.header)
     nib.save(smooth_mask_to_save, smooth_mask_file)
 
-    aif_search_mask_file = f'{mask_dir_pwi_space}/AIFsearchMask.nii'
+    # Set mask
+    proc.set_mask(t1_mask_file)
+    print(' \u2713')
 
+    # Continue processing
+    print(f'Performing slice-time correction...', end='', flush=True)
+    proc.slice_time_correction()
+    print(' \u2713')
+
+    print(f'Detecting baseline...', end='', flush=True)
+    proc.baseline_detection()
+    print(' \u2713')
+
+    print(f'Truncating signal...', end='', flush=True)
+    proc.truncate_signal()
+    print(' \u2713')
+
+    print(f'Performing motion correction...', end='', flush=True)
+    proc.motion_correction()
+    print(' \u2713')
+
+    print(f'Calculating concentration...', end='', flush=True)
+    proc.calc_concentration()
+    print(' \u2713')
+
+    print(f'Smooting data...', end='', flush=True)
     proc.smooth_data(smooth_mask_file)
+    print(' \u2713')
+
+    print(f'Performing automatic AIF selection...', end='', flush=True)
     proc.aif_selection(aif_search_mask_file, gm_mask_file)
+    print(' \u2713')
+
+    print(f'Performing parametric deconvolution...', end='', flush=True)
     proc.calc_perfusion()
+    print(' \u2713')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
