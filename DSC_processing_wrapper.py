@@ -42,8 +42,12 @@ def main(args):
     print(f'Running DSC {pwi_type} processing for {sub_id} - {timepoint}...', flush=True)
     proc = DSC_process(sub_id, tp, pwi_type, img_file, info, project_dir, branch)
 
+    print(f'Performing slice-time correction...', end='', flush=True)
+    proc.slice_time_correction()
+    print(' \u2713')
+
     # Create masks 
-    print(f'Creating masks', end='', flush=True)
+    print(f'Creating masks...', end='', flush=True)
     t1_type = 'T1UNI'
     t1_file = f'{project_dir}/data{structural_branch}/{sub_id}/{tp}/MR/{t1_type}/NATSPACE/0001.nii'
     t1_mask_dir = f'{project_dir}/masks{structural_branch}/{sub_id}/{tp}/MR/{t1_type}/NATSPACE'
@@ -89,10 +93,6 @@ def main(args):
     print(' \u2713')
 
     # Continue processing
-    print(f'Performing slice-time correction...', end='', flush=True)
-    proc.slice_time_correction()
-    print(' \u2713')
-
     print(f'Detecting baseline...', end='', flush=True)
     proc.baseline_detection()
     print(' \u2713')
