@@ -9,23 +9,10 @@ import matplotlib.cm as cm
 import argparse
 import os
 
-def main(args):
-    img_file = args.img_file
-    mask_file = args.mask_file
-    outfile = args.outfile
-    img_cmap = args.img_cmap
-    mask_cmap = args.mask_cmap
-    img_range = args.img_range
-    mask_range = args.mask_range
-    file_id = args.file_id
-    mask_id = args.mask_id
-    info = args.info
-    clobber = args.clobber
-
-    minc_qc(img_file, mask_file, outfile, img_cmap=img_cmap, mask_cmap=mask_cmap, img_range=img_range, mask_range=mask_range, file_id=file_id, mask_id=mask_id, info=info, clobber=clobber)
-
-def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral', img_range=None, mask_range=None, file_id='', mask_id='', info='', clobber=False):
-
+def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gray', mask_cmap : str = 'Spectral', 
+         img_range : tuple = None, mask_range : tuple = None, file_id : str = '', mask_id : str = '', 
+         info : str = '', mask_alpha=0.4, clobber : bool = False):
+    
     if not clobber and os.path.exists(outfile):
         print(f'{outfile} already exists. Use -clobber to overwrite.')
         return
@@ -53,51 +40,43 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
     for a in axcodes:
         if a in ['L', 'R']:
             dim_names.extend(['x'])
-            target_orientation.extend(['L'])
+            target_orientation.extend(['R'])
         elif a in ['A', 'P']:
             dim_names.extend(['y'])
             target_orientation.extend(['A'])
         elif a in ['S', 'I']:
             dim_names.extend(['z'])
-            target_orientation.extend(['I'])
+            target_orientation.extend(['S'])
     
     target_ornt = axcodes2ornt(target_orientation)
     current_ornt = io_orientation(img_affine)
     transform = ornt_transform(current_ornt, target_ornt)
     img_data = apply_orientation(img_data, transform)
     mask_data = apply_orientation(mask_data, transform)
-
-    # if np.signbit(img_affine[dim_names.index('z'), dim_names.index('z')]):
-    #     img_data = np.flip(img_data, (1,2)) # dim_names.index('z'))
-    #     mask_data = np.flip(mask_data, (1,2)) # dim_names.index('z'))
         
     if img_range is None:
-        img_range = [img_data.min(), img_data.max()]
+        img_range = np.nanpercentile(img_data,[1,99])
     else:
         assert len(img_range) == 2, f"Image range should be [min, max]. Got: {img_range}"
 
     if mask_range is None:
-        mask_range = [mask_data.min(), mask_data.max()]
+        mask_range = [np.nanmin(mask_data), np.nanmax(mask_data)] # Dont display 0 values 
     else:
         assert len(mask_range) == 2, f"Mask range should be [min, max]. Got: {mask_range}"
-        mask_cmap = transparent_cmap(mask_cmap)
+    mask_cmap = transparent_cmap(mask_cmap)
 
     views = {dim_names[0]: [round(i) for i in np.linspace(img_data.shape[0]/4,img_data.shape[0]-(img_data.shape[0]/4),9)],
              dim_names[1]: [round(i) for i in np.linspace(img_data.shape[1]/4,img_data.shape[1]-(img_data.shape[1]/4),9)],
              dim_names[2]: [round(i) for i in np.linspace(img_data.shape[2]/4,img_data.shape[2]-(img_data.shape[2]/4),9)]}
 
-    img_data_show = {dim_names[0]: [img_data[v,:,:] for v in views[dim_names[0]]],
-                     dim_names[1]: [img_data[:,v,:] for v in views[dim_names[1]]],
-                     dim_names[2]: [img_data[:,:,v] for v in views[dim_names[2]]]}
+    img_data_show = {dim_names[0]: [np.rot90(img_data[v,:,:]) for v in views[dim_names[0]]],
+                     dim_names[1]: [np.rot90(img_data[:,v,:]) for v in views[dim_names[1]]],
+                     dim_names[2]: [np.rot90(img_data[:,:,v]) for v in views[dim_names[2]]]}
     
-    mask_data_show = {dim_names[0]: [mask_data[v,:,:] for v in views[dim_names[0]]],
-                      dim_names[1]: [mask_data[:,v,:] for v in views[dim_names[1]]],
-                      dim_names[2]: [mask_data[:,:,v] for v in views[dim_names[2]]]}
-    
-    # Flip z-axis:
-    img_data_show['z'] = [np.flip(i) for i in img_data_show['z']]
-    mask_data_show['z'] = [np.flip(i) for i in mask_data_show['z']]
-    
+    mask_data_show = {dim_names[0]: [np.rot90(mask_data[v,:,:]) for v in views[dim_names[0]]],
+                      dim_names[1]: [np.rot90(mask_data[:,v,:]) for v in views[dim_names[1]]],
+                      dim_names[2]: [np.rot90(mask_data[:,:,v]) for v in views[dim_names[2]]]}
+       
     fig = plt.figure(figsize=(17,10))
 
     ax = []
@@ -119,8 +98,6 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
 
     fig.set_facecolor('k')
 
-    alpha = 0.5
-
     x_views = list(range(len(views['x'])))
     y_views = list(range(len(views['y'])))
     z_views = list(range(len(views['z'])))
@@ -131,27 +108,27 @@ def minc_qc(img_file, mask_file, outfile, img_cmap='gray', mask_cmap='Spectral',
         # Top row - Large view
         if a.get_subplotspec().get_geometry()[2] == 0:
             a.imshow(img_data_show['x'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['x'][large_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['x'][large_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
         elif a.get_subplotspec().get_geometry()[2] == 3:
             a.imshow(img_data_show['y'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['y'][large_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['y'][large_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
         elif a.get_subplotspec().get_geometry()[2] == 6:
             a.imshow(img_data_show['z'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['z'][large_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['z'][large_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
 
         # Small views
         elif a.get_subplotspec().get_geometry()[2] in [27, 28, 29, 36, 37, 38, 45, 46, 47]:
             x_view = x_views.pop(0)
             a.imshow(img_data_show['x'][x_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['x'][x_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['x'][x_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
         elif a.get_subplotspec().get_geometry()[2] in [30, 31, 32, 39, 40, 41, 48, 49, 50]:
             y_view = y_views.pop(0)
             a.imshow(img_data_show['y'][y_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['y'][y_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['y'][y_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
         elif a.get_subplotspec().get_geometry()[2] in [33, 34, 35, 42, 43, 44, 51, 52, 53]:
             z_view = z_views.pop(0)
             a.imshow(img_data_show['z'][z_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest')
-            a.imshow(mask_data_show['z'][z_view], alpha=alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
+            a.imshow(mask_data_show['z'][z_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest')
 
         a.axis('off')
 
@@ -187,25 +164,11 @@ if __name__ == "__main__":
     parser.add_argument('-file_id', default='', help='Add additional information about the image, e.g. sub_id, to be shown with the filename.')
     parser.add_argument('-mask_id', default='', help='Add additional information about the mask, e.g. sub_id, to be shown with the filename.')
     parser.add_argument('-info', default='', help='Add additional information to be shown on the figure.')
+    parser.add_argument('-mask_alpha', default=0.4, help='Alpha (transparancy) of mask. Between 0 and 1.')
     parser.add_argument('-clobber', action='store_true', help='If -clobber, existing file will be overwritten.')
 
     args = parser.parse_args()
 
-    # # DEBUGGNING
-    # class args:
-    #     # img_file = '/Users/au483096/Desktop/stx2_0004_20211007_082130_t1.mnc' # ZYX
-    #     # mask_file = '/Users/au483096/Desktop/gm.mnc' # ZYX
-    #     # outfile = '/Users/au483096/Desktop/test_flip_zyx.jpg'
-    #     img_file = '/Users/au483096/Desktop/oef.mnc'
-    #     mask_file = '/Users/au483096/Desktop/oef.mnc'
-    #     outfile = '/Users/au483096/Desktop/test.jpg'
-    #     img_cmap = 'gray'
-    #     mask_cmap = 'jet'
-    #     img_range = None
-    #     mask_range = None
-    #     file_id = ''
-    #     mask_id = ''
-    #     info = ''
-    #     clobber = True
+    mask_qc(args.img_file, args.mask_file, args.outfile, img_cmap=args.img_cmap, mask_cmap=args.mask_cmap, img_range=args.img_range,
+            mask_range=args.mask_range, file_id=args.file_id, mask_id=args.mask_id, info=args.info, mask_alpha=args.mask_alpha, clobber=args.clobber)
 
-    main(args)

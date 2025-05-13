@@ -5,6 +5,7 @@ import ants
 from stormdb.access import Query
 from stormdb_functions import convert_pwi
 import argparse
+from minc_qc import mask_qc
 
 if str(Path('__file__').resolve()).startswith('/Volumes'):
     path_prefix = '/Volumes'
@@ -22,6 +23,7 @@ def main(args):
     subject = args.subject
     timepoint = args.timepoint
     pwi_type = args.pwi_type
+    clobber = args.clobber # TODO implement clobber
 
     q = Query(project)
     filtered_series = q.filter_series(types=pwi_type, subjects=subject, return_files=True)
@@ -64,6 +66,8 @@ def main(args):
 
     mask_dir_pwi_space = f'{proc.mask_dir}/{t1_type}/{pwi_type}SPACE'
     Path(mask_dir_pwi_space).mkdir(parents=True, exist_ok=True)
+
+    mask_qc(f'{proc.data_dir}/{pwi_type}MEAN/NATSPACE/0001.nii', f'{proc.data_dir}/{t1_type}/{pwi_type}SPACE/0001.nii', '/Users/au483096/Desktop/test.jpg', mask_cmap='gray')
 
     for mask_file in ['struc_gm.nii', 'struc_wm.nii', 'struc_t1mask.nii', 'AIFsearchMask.nii']:
         mask = ants.image_read(f'{t1_mask_dir}/{mask_file}')
@@ -129,6 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('subject', help='Subject ID (from stormdb)')
     parser.add_argument('pwi_type', help='Type of DSC image (can be PWI or SEPWI)')
     parser.add_argument('timepoint', help='Timepoint of DSC image')
+    parser.add_argument('-clobber', action='store_true', help='Set -clobber, to overwrite any existing files.')
 
     args = parser.parse_args()
 
