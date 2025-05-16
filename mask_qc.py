@@ -11,7 +11,7 @@ import os
 
 def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gray', mask_cmap : str = 'Spectral', 
          img_range : tuple = None, mask_range : tuple = None, file_id : str = '', mask_id : str = '', 
-         info : str = '', mask_alpha=0.4, clobber : bool = False):
+         info : str = '', mask_alpha=0.4, mask_is_image=False, clobber : bool = False):
     
     if not clobber and os.path.exists(outfile):
         print(f'{outfile} already exists. Use -clobber to overwrite.')
@@ -60,7 +60,10 @@ def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gr
         assert len(img_range) == 2, f"Image range should be [min, max]. Got: {img_range}"
 
     if mask_range is None:
-        mask_range = [np.nanmin(mask_data), np.nanmax(mask_data)] # Dont display 0 values 
+        if mask_is_image:
+            mask_range = np.nanpercentile(mask_data,[1,99])
+        else:
+            mask_range = [np.nanmin(mask_data), np.nanmax(mask_data)] # Dont display 0 values 
     else:
         assert len(mask_range) == 2, f"Mask range should be [min, max]. Got: {mask_range}"
     mask_cmap = transparent_cmap(mask_cmap)
