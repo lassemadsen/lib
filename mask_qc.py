@@ -142,6 +142,7 @@ def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gr
     fig.text(.02, .94, f'{info}', horizontalalignment='left', verticalalignment='center', color='white')
 
     plt.savefig(outfile, dpi=300)
+    plt.close()
     
 
 def transparent_cmap(cmap_str):
