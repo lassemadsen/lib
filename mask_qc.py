@@ -31,7 +31,7 @@ def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gr
     det2 = np.linalg.det(mask_affine[:3, :3])
 
     if not np.isclose(det1,det2):
-        print('Error. Image and mask do not have same dimension..')
+        print(f'Error. Image ({img_file}) and mask ({mask_file}) do not have same dimension..')
         return
 
     axcodes = aff2axcodes(img_affine)
