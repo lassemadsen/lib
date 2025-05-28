@@ -127,34 +127,37 @@ def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gr
     aspect = {'x': extent['x'][1]/extent['x'][3],
               'y': extent['y'][1]/extent['y'][3],
               'z': extent['z'][1]/extent['z'][3]}
+    
+    origin = {'image': 'lower' if img_file.split('.')[-1] == 'mnc' else 'upper',
+              'mask': 'lower' if mask_file.split('.')[-1] == 'mnc' else 'upper',} 
 
     for a in ax:
         large_view = 5 # Location of the large (top row) view from x,y,z_views lists. 
 
         # Top row - Large view
         if a.get_subplotspec().get_geometry()[2] == 0:
-            a.imshow(img_data_show['x'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['x'], aspect=aspect['x'])
-            a.imshow(mask_data_show['x'][large_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['x'], aspect=aspect['x'])
+            a.imshow(img_data_show['x'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['x'], aspect=aspect['x'], origin=origin['image'])
+            a.imshow(mask_data_show['x'][large_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['x'], aspect=aspect['x'], origin=origin['mask'])
         elif a.get_subplotspec().get_geometry()[2] == 3:
-            a.imshow(img_data_show['y'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['y'], aspect=aspect['y'])
-            a.imshow(mask_data_show['y'][large_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['y'], aspect=aspect['y'])
+            a.imshow(img_data_show['y'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['y'], aspect=aspect['y'], origin=origin['image'])
+            a.imshow(mask_data_show['y'][large_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['y'], aspect=aspect['y'], origin=origin['mask'])
         elif a.get_subplotspec().get_geometry()[2] == 6:
-            a.imshow(img_data_show['z'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['z'], aspect=aspect['x'])
-            a.imshow(mask_data_show['z'][large_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['z'], aspect=aspect['z'])
+            a.imshow(img_data_show['z'][large_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['z'], aspect=aspect['x'], origin=origin['image'])
+            a.imshow(mask_data_show['z'][large_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['z'], aspect=aspect['z'], origin=origin['mask'])
 
         # Small views
         elif a.get_subplotspec().get_geometry()[2] in [27, 28, 29, 36, 37, 38, 45, 46, 47]:
             x_view = x_views.pop(0)
-            a.imshow(img_data_show['x'][x_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['x'], aspect=aspect['x'])
-            a.imshow(mask_data_show['x'][x_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['x'], aspect=aspect['x'])
+            a.imshow(img_data_show['x'][x_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['x'], aspect=aspect['x'], origin=origin['image'])
+            a.imshow(mask_data_show['x'][x_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['x'], aspect=aspect['x'], origin=origin['mask'])
         elif a.get_subplotspec().get_geometry()[2] in [30, 31, 32, 39, 40, 41, 48, 49, 50]:
             y_view = y_views.pop(0)
-            a.imshow(img_data_show['y'][y_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['y'], aspect=aspect['y'])
-            a.imshow(mask_data_show['y'][y_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['y'], aspect=aspect['y'])
+            a.imshow(img_data_show['y'][y_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['y'], aspect=aspect['y'], origin=origin['image'])
+            a.imshow(mask_data_show['y'][y_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['y'], aspect=aspect['y'], origin=origin['mask'])
         elif a.get_subplotspec().get_geometry()[2] in [33, 34, 35, 42, 43, 44, 51, 52, 53]:
             z_view = z_views.pop(0)
-            a.imshow(img_data_show['z'][z_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['z'], aspect=aspect['z'])
-            a.imshow(mask_data_show['z'][z_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['z'], aspect=aspect['z'])
+            a.imshow(img_data_show['z'][z_view], cmap=img_cmap, vmin=img_range[0], vmax=img_range[1], interpolation='nearest', extent=extent['z'], aspect=aspect['z'], origin=origin['image'])
+            a.imshow(mask_data_show['z'][z_view], alpha=mask_alpha, cmap=mask_cmap, vmin=mask_range[0], vmax=mask_range[1], interpolation='nearest', extent=extent['z'], aspect=aspect['z'], origin=origin['mask'])
 
         a.axis('off')
 
