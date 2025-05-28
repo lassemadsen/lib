@@ -73,13 +73,23 @@ def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gr
              dim_names[1]: [round(i) for i in np.linspace(img_data.shape[1]/4,img_data.shape[1]-(img_data.shape[1]/4),9)],
              dim_names[2]: [round(i) for i in np.linspace(img_data.shape[2]/4,img_data.shape[2]-(img_data.shape[2]/4),9)]}
 
-    img_data_show = {dim_names[0]: [np.rot90(img_data[v,:,:]) for v in views[dim_names[0]]],
-                     dim_names[1]: [np.rot90(img_data[:,v,:]) for v in views[dim_names[1]]],
-                     dim_names[2]: [np.rot90(img_data[:,:,v]) for v in views[dim_names[2]]]}
+    if img_file.split('.')[-1] == 'mnc':
+        img_data_show = {dim_names[0]: [img_data[v,:,:] for v in views[dim_names[0]]],
+                         dim_names[1]: [img_data[:,v,:] for v in views[dim_names[1]]],
+                         dim_names[2]: [img_data[:,:,v] for v in views[dim_names[2]]]}
+    else:
+        img_data_show = {dim_names[0]: [np.rot90(img_data[v,:,:]) for v in views[dim_names[0]]],
+                         dim_names[1]: [np.rot90(img_data[:,v,:]) for v in views[dim_names[1]]],
+                         dim_names[2]: [np.rot90(img_data[:,:,v]) for v in views[dim_names[2]]]}
     
-    mask_data_show = {dim_names[0]: [np.rot90(mask_data[v,:,:]) for v in views[dim_names[0]]],
-                      dim_names[1]: [np.rot90(mask_data[:,v,:]) for v in views[dim_names[1]]],
-                      dim_names[2]: [np.rot90(mask_data[:,:,v]) for v in views[dim_names[2]]]}
+    if mask_file.split('.')[-1] == 'mnc':
+        mask_data_show = {dim_names[0]: [mask_data[v,:,:] for v in views[dim_names[0]]],
+                          dim_names[1]: [mask_data[:,v,:] for v in views[dim_names[1]]],
+                          dim_names[2]: [mask_data[:,:,v] for v in views[dim_names[2]]]}
+    else:
+        mask_data_show = {dim_names[0]: [np.rot90(mask_data[v,:,:]) for v in views[dim_names[0]]],
+                          dim_names[1]: [np.rot90(mask_data[:,v,:]) for v in views[dim_names[1]]],
+                          dim_names[2]: [np.rot90(mask_data[:,:,v]) for v in views[dim_names[2]]]}
 
     voxel_sizes = {dim_names[0]: img.header.get_zooms()[:3][0],
                    dim_names[1]: img.header.get_zooms()[:3][1],
