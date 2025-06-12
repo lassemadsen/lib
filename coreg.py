@@ -4,6 +4,8 @@ import os
 import argparse
 import tempfile
 import ants
+import matplotlib
+matplotlib.use('Agg')
 
 # TODO See if outfile can be set with _0_GenericAffine ending
 # TODO Add option to perform non-linear and rigid coreg
