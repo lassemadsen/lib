@@ -1,10 +1,25 @@
 import numpy as np
 import ants
 
-def ants_transform_to_xfm(transform: ants.ANTsTransform, output_file):
+def ants_to_xfm(transform, output_file):
     """
     Conversion from ants transform to .xfm
+
+    Parameters
+    ----------
+    transform : ants.ANTsTransform or str
+        Can be ANTsTransform type or str (location of transform .mat file)
+    output_file: str
+        Location of output .xfm file.
     """
+    if isinstance(transform, str):
+        transform = ants.read_transform(transform)
+    elif isinstance(transform, ants.ANTsTransform):
+        pass
+    else:
+        print('Error. Transform should be str or ANTsTransform')
+        return
+
     if transform.transform_type != "AffineTransform" or transform.dimension != 3:
         raise ValueError("Only 3D AffineTransform is supported.")
     
@@ -37,3 +52,15 @@ def ants_transform_to_xfm(transform: ants.ANTsTransform, output_file):
         for row in inverse_affine[:3, :]:
             f.write(" " + " ".join(f"{val:.14f}" for val in row) + "\n")
         f.write(";\n")
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('ants_transform', help='ANTS .mat transform file')
+    parser.add_argument('output_xfm', help='File to save the converted .xfm file.')
+    args = parser.parse_args()
+
+    ants_transform = ants.read_transform(args.ants_transform)
+
+    ants_to_xfm(ants_transform, args.output_xfm)
