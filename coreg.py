@@ -14,7 +14,7 @@ def coreg(moving_image, target_image, outdir, outname, qc_file=None, clobber=Fal
 
     outfile_short = f'{outdir}/{outname}'
     outfile = f'{outdir}/{outname}_0_GenericAffine.xfm'
-    
+
     if os.path.isfile(outfile) and not clobber:
         print('Outfile exits.. Used -clobber to overwrite')
         return
@@ -58,7 +58,7 @@ def coreg(moving_image, target_image, outdir, outname, qc_file=None, clobber=Fal
             resampled = ants.image_read(f'{tmp_dir}/tmp_img.nii')
             target_image = ants.image_read(target_image)
 
-            resampled.plot(overlay = target_image, overlay_alpha=0.7, filename=qc_file)
+            target_image.plot(overlay = resampled, overlay_alpha=0.7, filename=qc_file)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
