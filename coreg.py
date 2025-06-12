@@ -46,7 +46,7 @@ def coreg(moving_image, target_image, outdir, outname, qc_file=None, clobber=Fal
                         '--winsorize-image-intensities [0.005,0.995] '
                         '--use-histogram-matching 0 '
                         '--transform Rigid[0.1] '
-                        f'--metric MI[{target_image}, {moving_image},1,32,Regular,0.25] '
+                        f'--metric MI[{moving_image}, {target_image},1,32,Regular,0.25] '
                         '--convergence [500x250x100,1e-6,10] '
                         '--shrink-factors 4x2x1 '
                         '--smoothing-sigmas 2x1x0vox '
