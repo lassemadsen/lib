@@ -1,7 +1,8 @@
 import numpy as np
 import ants
+import os
 
-def ants_to_xfm(transform, output_file):
+def ants_to_xfm(transform, output_file, clobber=False):
     """
     Conversion from ants transform to .xfm
 
@@ -12,6 +13,10 @@ def ants_to_xfm(transform, output_file):
     output_file: str
         Location of output .xfm file.
     """
+    if os.path.isfile(output_file) and not clobber:
+        print(f'{output_file} exists. Use -clobber to overwrite.')
+
+
     if isinstance(transform, str):
         transform = ants.read_transform(transform)
     elif isinstance(transform, ants.ANTsTransform):
@@ -59,8 +64,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('ants_transform', help='ANTS .mat transform file')
     parser.add_argument('output_xfm', help='File to save the converted .xfm file.')
+    parser.add_argument('-clobber', action='store_true')
     args = parser.parse_args()
 
-    ants_transform = ants.read_transform(args.ants_transform)
-
-    ants_to_xfm(ants_transform, args.output_xfm)
+    ants_to_xfm(args.ants_transform, args.output_xfm, argparse.clobber)
