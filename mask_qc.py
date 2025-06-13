@@ -6,20 +6,27 @@ import nibabel as nib
 import ants
 from nibabel.orientations import aff2axcodes, io_orientation, axcodes2ornt, ornt_transform, apply_orientation
 import numpy as np
-import matplotlib.cm as cm
+# import matplotlib.cm as cm
 import argparse
 import os
 from PIL import Image
 import tempfile
 
 def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gray', mask_cmap : str = 'Spectral', 
-                 title : str = '', mask_alpha=0.4, clobber : bool = False):
+                 title : str = '', mask_qrange = None, mask_alpha=0.5, clobber : bool = False):
     
     if os.path.isfile(outfile) and not clobber:
         print(f'{outfile} exists. Use clobber to overwrite.')
+        return
 
     img = ants.image_read(img_file)
     mask = ants.image_read(mask_file)
+
+    if mask_qrange is None:
+        vminol = vmaxol = None
+    else:
+        vminol, vmaxol = mask.quantile(mask_qrange[0]), mask.quantile(mask_qrange[1])
+    mask_cmap = transparent_cmap(mask_cmap)
 
     image_paths = []
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -39,6 +46,8 @@ def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gr
                 overlay_cmap=mask_cmap,
                 overlay_alpha=mask_alpha,
                 axis=axis,
+                vminol = vminol,
+                vmaxol = vmaxol,
                 title = t
             )
             image_paths.append(filename_axis)
@@ -237,7 +246,7 @@ def mask_qc_old(img_file : str, mask_file : str, outfile : str, img_cmap : str =
 
 def transparent_cmap(cmap_str):
 
-    cmap = cm.get_cmap(cmap_str)
+    cmap = matplotlib.colormaps.get_cmap(cmap_str)  #cm.get_cmap(cmap_str)
     # Modify the colormap's alpha values to make lowest values transparent
     cmap_colors = cmap(np.arange(cmap.N))
     cmap_colors[:, 3] = np.where(np.arange(cmap.N) < 1, 0, cmap_colors[:, 3])
@@ -247,7 +256,11 @@ def transparent_cmap(cmap_str):
 
 
 if __name__ == "__main__": 
-    mask_qc('/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/dataDWI_seg/0004/20210427_124908/dwi_trace.nii', '/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/masksDWI_seg/0004/24h.nii', '/Users/au483096/Desktop/test_DWI.jpg', clobber=True)
+    # mask_qc('/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/dataDWI_seg/0004/20210427_124908/dwi_trace.nii', '/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/masksDWI_seg/0004/24h.nii', '/Users/au483096/Desktop/test_DWI.jpg', 
+    #         clobber=True, mask_alpha=1, mask_cmap='Reds')
+    # mask_qc('/Volumes/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/datakurtosis_jun25/0004/20131113_091044/MR/T1/DKISPACE/0001.nii', 
+    #         '/Volumes/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/datakurtosis_jun25/0004/20131113_091044/MR/KURTOSIS_DKITOOLS139_MD/NATSPACE/0001.nii', 
+    #         '/Users/au483096/Desktop/test_DKI.jpg', clobber=True, mask_qrange = [0.001, 0.999])
     # mask_qc('/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/dataSEP_MR_feb25/0004/20210427_124908/MR/SEPWIMEAN/NATSPACE/0001.nii', '/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/dataSEP_MR_feb25/0004/20210427_124908/MR/T1UNI/SEPWIMEAN/T1_resampled.nii', '/Users/au483096/Desktop/test_SEPWI.jpg', clobber=True)
 
     parser = argparse.ArgumentParser(description='Script to plot QC of minc image and mask')
