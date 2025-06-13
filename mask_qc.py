@@ -9,8 +9,58 @@ import numpy as np
 import matplotlib.cm as cm
 import argparse
 import os
+from PIL import Image
+import tempfile
 
 def mask_qc(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gray', mask_cmap : str = 'Spectral', 
+                 title : str = '', mask_alpha=0.4, clobber : bool = False):
+    
+    if os.path.isfile(outfile) and not clobber:
+        print(f'{outfile} exists. Use clobber to overwrite.')
+
+    img = ants.image_read(img_file)
+    mask = ants.image_read(mask_file)
+
+    image_paths = []
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        for axis in range(len(img.shape)):
+            if axis == 0:
+                t = title
+            else:
+                if title == '': # If title is empty, the other titles can also be empty. Else ' ', to allign figures when combining. 
+                    t = ''
+                else:
+                    t = ' '
+            filename_axis = f'{tmp_dir}/axis_{axis}.jpg'
+            img.plot(
+                overlay=mask,
+                filename=filename_axis,
+                cmap=img_cmap,
+                overlay_cmap=mask_cmap,
+                overlay_alpha=mask_alpha,
+                axis=axis,
+                title = t
+            )
+            image_paths.append(filename_axis)
+
+        # Open and concatenate images horizontally
+        images = [Image.open(path) for path in image_paths]
+        widths, heights = zip(*(im.size for im in images))
+
+        total_width = sum(widths)
+        max_height = max(heights)
+
+        concatenated = Image.new('RGB', (total_width, max_height))
+
+        x_offset = 0
+        for im in images:
+            concatenated.paste(im, (x_offset, 0))
+            x_offset += im.width
+
+        # Save final combined image
+        concatenated.save(outfile)
+
+def mask_qc_old(img_file : str, mask_file : str, outfile : str, img_cmap : str = 'gray', mask_cmap : str = 'Spectral', 
          img_range : tuple = None, mask_range : tuple = None, file_id : str = '', mask_id : str = '', 
          info : str = '', mask_alpha=0.4, mask_is_image=False, clobber : bool = False):
     
@@ -196,8 +246,8 @@ def transparent_cmap(cmap_str):
     return cmap
 
 
-if __name__ == "__main__":
-    # mask_qc('/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/dataDWI_seg/0004/20210427_124908/dwi_trace.nii', '/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/masksDWI_seg/0004/24h.nii', '/Users/au483096/Desktop/test_DWI.jpg', clobber=True)
+if __name__ == "__main__": 
+    mask_qc('/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/dataDWI_seg/0004/20210427_124908/dwi_trace.nii', '/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/masksDWI_seg/0004/24h.nii', '/Users/au483096/Desktop/test_DWI.jpg', clobber=True)
     # mask_qc('/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/dataSEP_MR_feb25/0004/20210427_124908/MR/SEPWIMEAN/NATSPACE/0001.nii', '/Volumes/projects/MINDLAB2021_MR_ENIGMA/scratch/dataSEP_MR_feb25/0004/20210427_124908/MR/T1UNI/SEPWIMEAN/T1_resampled.nii', '/Users/au483096/Desktop/test_SEPWI.jpg', clobber=True)
 
     parser = argparse.ArgumentParser(description='Script to plot QC of minc image and mask')
@@ -206,16 +256,12 @@ if __name__ == "__main__":
     parser.add_argument('outfile', help='Location of output. Should be .jpg or .png.')
     parser.add_argument('-img_cmap', default='gray', help='Matlplotlib cmap to plot image. Default is gray.')
     parser.add_argument('-mask_cmap', default='jet', help='Matlplotlib cmap to plot mask. Default is jet.')
-    parser.add_argument('-img_range', nargs=2, default=None, help='Min Max range of image. Autoscale is none provided.', metavar=('min', 'max'))
-    parser.add_argument('-mask_range', nargs=2, default=None, help='Min Max range of mask. Autoscale is none provided.', metavar=('min', 'max'))
-    parser.add_argument('-file_id', default='', help='Add additional information about the image, e.g. sub_id, to be shown with the filename.')
-    parser.add_argument('-mask_id', default='', help='Add additional information about the mask, e.g. sub_id, to be shown with the filename.')
-    parser.add_argument('-info', default='', help='Add additional information to be shown on the figure.')
+    parser.add_argument('-title', default='', help='Add additional information to be shown on the figure.')
     parser.add_argument('-mask_alpha', default=0.4, help='Alpha (transparancy) of mask. Between 0 and 1.')
     parser.add_argument('-clobber', action='store_true', help='If -clobber, existing file will be overwritten.')
 
-    args = parser.parse_args()
+    args = parser.parse_args()    
 
-    mask_qc(args.img_file, args.mask_file, args.outfile, img_cmap=args.img_cmap, mask_cmap=args.mask_cmap, img_range=args.img_range,
-            mask_range=args.mask_range, file_id=args.file_id, mask_id=args.mask_id, info=args.info, mask_alpha=args.mask_alpha, clobber=args.clobber)
+    mask_qc(args.img_file, args.mask_file, args.outfile, img_cmap=args.img_cmap, mask_cmap=args.mask_cmap, 
+            title=args.title, mask_alpha=args.mask_alpha, clobber=args.clobber)
 

@@ -56,7 +56,7 @@ def coreg(moving_image, target_image, outdir, outname, qc_file=None, clobber=Fal
     if qc_file is not None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             bash_helper.run_shell(f'itk_resample --like {target_image} --transform {outfile_short}_0_GenericAffine.xfm {moving_image} {tmp_dir}/tmp_img.nii --clobber')
-            mask_qc(target_image, f'{tmp_dir}/tmp_img.nii', qc_file)
+            mask_qc(target_image, f'{tmp_dir}/tmp_img.nii', qc_file, clobber=clobber)
             # resampled = ants.image_read(f'{tmp_dir}/tmp_img.nii')
             # target_image = ants.image_read(target_image)
 
