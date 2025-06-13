@@ -8,7 +8,7 @@ from mask_qc import mask_qc
 # TODO See if outfile can be set with _0_GenericAffine ending
 # TODO Add option to perform non-linear and rigid coreg
 
-def coreg(moving_image, target_image, outdir, outname, qc_file=None, clobber=False):
+def coreg(moving_image, target_image, outdir, outname, resampled_file=None, qc_file=None, clobber=False):
 
     outfile_short = f'{outdir}/{outname}'
     outfile = f'{outdir}/{outname}_0_GenericAffine.xfm'
@@ -50,10 +50,16 @@ def coreg(moving_image, target_image, outdir, outname, qc_file=None, clobber=Fal
                         '--smoothing-sigmas 2x1x0vox '
                         '--minc')
     
+    if resampled_file is not None:
+        bash_helper.run_shell(f'itk_resample --like {target_image} --transform {outfile_short}_0_GenericAffine.xfm {moving_image} {resampled_file} --clobber')
+
     if qc_file is not None:
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            bash_helper.run_shell(f'itk_resample --like {target_image} --transform {outfile_short}_0_GenericAffine.xfm {moving_image} {tmp_dir}/tmp_img.nii --clobber')
-            mask_qc(target_image, f'{tmp_dir}/tmp_img.nii', qc_file, clobber=clobber)
+        if resampled_file is None:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                bash_helper.run_shell(f'itk_resample --like {target_image} --transform {outfile_short}_0_GenericAffine.xfm {moving_image} {tmp_dir}/tmp_img.nii --clobber')
+            resampled_file = f'{tmp_dir}/tmp_img.nii'
+            
+        mask_qc(target_image, resampled_file, qc_file, clobber=clobber, mask_qrange=[0.01, 0.99])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
