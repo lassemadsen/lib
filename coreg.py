@@ -7,6 +7,7 @@ from mask_qc import mask_qc
 
 # TODO See if outfile can be set with _0_GenericAffine ending
 # TODO Add option to perform non-linear and rigid coreg
+# TODO Check minc? 
 
 def coreg(moving_image, target_image, outdir, outname, resampled_file=None, qc_file=None, clobber=False):
 
@@ -17,23 +18,23 @@ def coreg(moving_image, target_image, outdir, outname, resampled_file=None, qc_f
         print('Outfile exits.. Used -clobber to overwrite')
         return
 
-    if moving_image.split('.')[-1] == 'nii':
-        bash_helper.run_shell(f'nii2mnc {moving_image} -clobber -float')
-        moving_image = moving_image.split('nii')[0] + 'mnc'
-    elif moving_image.split('.')[-1] == 'mnc':
-        pass
-    else:
-        print('Error. "moving_image" has to be .nii or .mnc')
-        return
+    # if moving_image.split('.')[-1] == 'nii':
+    #     bash_helper.run_shell(f'nii2mnc {moving_image} -clobber -float')
+    #     moving_image = moving_image.split('nii')[0] + 'mnc'
+    # elif moving_image.split('.')[-1] == 'mnc':
+    #     pass
+    # else:
+    #     print('Error. "moving_image" has to be .nii or .mnc')
+    #     return
 
-    if target_image.split('.')[-1] == 'nii':
-        bash_helper.run_shell(f'nii2mnc {target_image} -clobber -float')
-        target_image = target_image.split('nii')[0] + 'mnc'
-    elif target_image.split('.')[-1] == 'mnc':
-        pass
-    else:
-        print('Error. "target_image" has to be .nii or .mnc')
-        return
+    # if target_image.split('.')[-1] == 'nii':
+    #     bash_helper.run_shell(f'nii2mnc {target_image} -clobber -float')
+    #     target_image = target_image.split('nii')[0] + 'mnc'
+    # elif target_image.split('.')[-1] == 'mnc':
+    #     pass
+    # else:
+    #     print('Error. "target_image" has to be .nii or .mnc')
+    #     return
 
 
     print(f'Performing coregistration from {moving_image} to {target_image}...')
@@ -58,7 +59,7 @@ def coreg(moving_image, target_image, outdir, outname, resampled_file=None, qc_f
             with tempfile.TemporaryDirectory() as tmp_dir:
                 bash_helper.run_shell(f'itk_resample --like {target_image} --transform {outfile_short}_0_GenericAffine.xfm {moving_image} {tmp_dir}/tmp_img.nii --clobber')
             resampled_file = f'{tmp_dir}/tmp_img.nii'
-            
+
         mask_qc(target_image, resampled_file, qc_file, clobber=clobber, mask_qrange=[0.01, 0.99])
 
 if __name__ == '__main__':
