@@ -3,9 +3,10 @@ import bash_helper
 import os
 import argparse
 import tempfile
-import ants
-import matplotlib
-matplotlib.use('Agg')
+# import ants
+# import matplotlib
+# matplotlib.use('Agg')
+from mask_qc import mask_qc
 
 # TODO See if outfile can be set with _0_GenericAffine ending
 # TODO Add option to perform non-linear and rigid coreg
@@ -55,10 +56,11 @@ def coreg(moving_image, target_image, outdir, outname, qc_file=None, clobber=Fal
     if qc_file is not None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             bash_helper.run_shell(f'itk_resample --like {target_image} --transform {outfile_short}_0_GenericAffine.xfm {moving_image} {tmp_dir}/tmp_img.nii --clobber')
-            resampled = ants.image_read(f'{tmp_dir}/tmp_img.nii')
-            target_image = ants.image_read(target_image)
+            mask_qc(target_image, f'{tmp_dir}/tmp_img.nii', qc_file)
+            # resampled = ants.image_read(f'{tmp_dir}/tmp_img.nii')
+            # target_image = ants.image_read(target_image)
 
-            target_image.plot(overlay = resampled, overlay_alpha=0.7, filename=qc_file)
+            # target_image.plot(overlay = resampled, overlay_alpha=0.7, filename=qc_file)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
