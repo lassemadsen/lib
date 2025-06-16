@@ -63,23 +63,19 @@ def coreg(moving_image, target_image, outdir, outname, resampled_file=None, qc_f
         mask_qc(target_image, resampled_file, qc_file, clobber=clobber, mask_qrange=[0.01, 0.99])
 
 if __name__ == '__main__':
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('moving_image', help='File location of moving image.')
-    # parser.add_argument('target_image', help='File location of target image.')
-    # parser.add_argument('outdir', help='Directory of output transformation file.')
-    # parser.add_argument('outname', help='Name of transfomration file (prefix, i.e. without file type).')
-    # parser.add_argument('-qc_file', default=None, help='Optinal. Name of QC file.')
-    # parser.add_argument('-clobber', action='store_true', help='If -clobber, exsiting output files will be overwritten')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('moving_image', help='File location of moving image.')
+    parser.add_argument('target_image', help='File location of target image.')
+    parser.add_argument('outdir', help='Directory of output transformation file.')
+    parser.add_argument('outname', help='Name of transfomration file (prefix, i.e. without file type).')
+    parser.add_argument('-qc_file', default=None, help='Optinal. Name of QC file.')
+    parser.add_argument('-clobber', action='store_true', help='If -clobber, exsiting output files will be overwritten')
 
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
-    # coreg(args.moving_image, args.target_image, args.outdir, args.outname, args.qc_file, args.clobber)
+    coreg(args.moving_image, args.target_image, args.outdir, args.outname, args.qc_file, args.clobber)
 
-    # Test
-    # moving_2015 = '/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/datakurtosis_jun25/0004/20151209_084651/MR/T1/NATSPACE/0001.nii'
-    # fixed_2013 = '/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/datakurtosis_jun25/0004/20131113_091044/MR/T1/NATSPACE/0001.nii'
+    # target = '/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/datakurtosis_jun25/0004/20131113_091044/MR/KURTOSIS_DKITOOLS139_MD/NATSPACE/0001.nii'
+    # moving = '/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/datakurtosis_jun25/0004/20131113_091044/MR/T1/NATSPACE/0001.nii'
 
-    target = '/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/datakurtosis_jun25/0004/20131113_091044/MR/KURTOSIS_DKITOOLS139_MD/NATSPACE/0001.nii'
-    moving = '/projects/MINDLAB2013_18-MR-Amnestic-MCI/scratch/datakurtosis_jun25/0004/20131113_091044/MR/T1/NATSPACE/0001.nii'
-
-    coreg(moving, target, '/public/lama/lib', 'test', qc_file='/public/lama/lib/test.jpg', clobber=True)
+    # coreg(moving, target, '/public/lama/lib', 'test', qc_file='/public/lama/lib/test.jpg', clobber=True)
