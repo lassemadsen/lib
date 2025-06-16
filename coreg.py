@@ -58,9 +58,10 @@ def coreg(moving_image, target_image, outdir, outname, resampled_file=None, qc_f
         if resampled_file is None:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 bash_helper.run_shell(f'itk_resample --like {target_image} --transform {outfile_short}_0_GenericAffine.xfm {moving_image} {tmp_dir}/tmp_img.nii --clobber')
-            resampled_file = f'{tmp_dir}/tmp_img.nii'
+                mask_qc(target_image, f'{tmp_dir}/tmp_img.nii', qc_file, clobber=clobber, mask_qrange=[0.01, 0.99])
+        else:
+            mask_qc(target_image, resampled_file, qc_file, clobber=clobber, mask_qrange=[0.01, 0.99])
 
-        mask_qc(target_image, resampled_file, qc_file, clobber=clobber, mask_qrange=[0.01, 0.99])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
