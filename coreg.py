@@ -18,25 +18,6 @@ def coreg(moving_image, target_image, outdir, outname, resampled_file=None, qc_f
         print('Outfile exits.. Used -clobber to overwrite')
         return
 
-    # if moving_image.split('.')[-1] == 'nii':
-    #     bash_helper.run_shell(f'nii2mnc {moving_image} -clobber -float')
-    #     moving_image = moving_image.split('nii')[0] + 'mnc'
-    # elif moving_image.split('.')[-1] == 'mnc':
-    #     pass
-    # else:
-    #     print('Error. "moving_image" has to be .nii or .mnc')
-    #     return
-
-    # if target_image.split('.')[-1] == 'nii':
-    #     bash_helper.run_shell(f'nii2mnc {target_image} -clobber -float')
-    #     target_image = target_image.split('nii')[0] + 'mnc'
-    # elif target_image.split('.')[-1] == 'mnc':
-    #     pass
-    # else:
-    #     print('Error. "target_image" has to be .nii or .mnc')
-    #     return
-
-
     print(f'Performing coregistration from {moving_image} to {target_image}...')
     
     bash_helper.run_shell('antsRegistration --dimensionality 3 --float 0 '
@@ -50,17 +31,20 @@ def coreg(moving_image, target_image, outdir, outname, resampled_file=None, qc_f
                         '--shrink-factors 4x2x1 '
                         '--smoothing-sigmas 2x1x0vox '
                         '--minc')
+    xfm_file = f'{outfile_short}_0_GenericAffine.xfm'
     
     if resampled_file is not None:
-        bash_helper.run_shell(f'itk_resample --like {target_image} --transform {outfile_short}_0_GenericAffine.xfm {moving_image} {resampled_file} --clobber')
+        bash_helper.run_shell(f'itk_resample --like {target_image} --transform {xfm_file} {moving_image} {resampled_file} --clobber')
 
     if qc_file is not None:
         if resampled_file is None:
             with tempfile.TemporaryDirectory() as tmp_dir:
-                bash_helper.run_shell(f'itk_resample --like {target_image} --transform {outfile_short}_0_GenericAffine.xfm {moving_image} {tmp_dir}/tmp_img.nii --clobber')
+                bash_helper.run_shell(f'itk_resample --like {target_image} --transform {xfm_file} {moving_image} {tmp_dir}/tmp_img.nii --clobber')
                 mask_qc(target_image, f'{tmp_dir}/tmp_img.nii', qc_file, clobber=clobber, mask_qrange=[0.01, 0.99])
         else:
             mask_qc(target_image, resampled_file, qc_file, clobber=clobber, mask_qrange=[0.01, 0.99])
+
+    return xfm_file
 
 
 if __name__ == '__main__':
